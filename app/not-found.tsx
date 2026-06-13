@@ -2,29 +2,32 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { usePathname } from 'next/navigation';
 import { rootDomain, protocol } from '@/lib/utils';
 
 export default function NotFound() {
   const [subdomain, setSubdomain] = useState<string | null>(null);
-  const pathname = usePathname();
 
   useEffect(() => {
-    // Extract subdomain from URL if we're on a subdomain page
-    if (pathname?.startsWith('/subdomain/')) {
-      const extractedSubdomain = pathname.split('/')[2];
-      if (extractedSubdomain) {
-        setSubdomain(extractedSubdomain);
-      }
-    } else {
-      // Try to extract from hostname for direct subdomain access
-      const hostname = window.location.hostname;
-      if (hostname.includes(`.${rootDomain.split(':')[0]}`)) {
-        const extractedSubdomain = hostname.split('.')[0];
-        setSubdomain(extractedSubdomain);
-      }
+    const hostname = window.location.hostname.toLowerCase();
+    const rootDomainFormatted = rootDomain.split(':')[0];
+
+    // 本地开发: tenant.localhost
+    if (hostname.endsWith('.localhost')) {
+      setSubdomain(hostname.split('.')[0]);
+      return;
     }
-  }, [pathname]);
+
+    // 正式 / 预览环境: tenant.rootdomain.com
+    if (
+      hostname !== rootDomainFormatted &&
+      hostname.endsWith(`.${rootDomainFormatted}`)
+    ) {
+      setSubdomain(hostname.slice(0, -(rootDomainFormatted.length + 1)));
+      return;
+    }
+
+    setSubdomain(null);
+  }, []);
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-blue-50 to-white p-4">
