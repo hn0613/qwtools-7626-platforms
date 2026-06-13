@@ -1,8 +1,6 @@
 'use client';
 
-import type React from 'react';
-
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useActionState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,17 +18,16 @@ import {
   EmojiPickerSearch,
   EmojiPickerFooter
 } from '@/components/ui/emoji-picker';
-import { createSubdomainAction } from '@/app/actions';
+import { createSubdomainAction, type CreateState } from '@/app/actions';
 import { rootDomain } from '@/lib/utils';
 
-type CreateState = {
-  error?: string;
-  success?: boolean;
-  subdomain?: string;
-  icon?: string;
-};
-
-function SubdomainInput({ defaultValue }: { defaultValue?: string }) {
+function SubdomainInput({
+  value,
+  onChange
+}: {
+  value: string;
+  onChange: (value: string) => void;
+}) {
   return (
     <div className="space-y-2">
       <Label htmlFor="subdomain">Subdomain</Label>
@@ -40,7 +37,8 @@ function SubdomainInput({ defaultValue }: { defaultValue?: string }) {
             id="subdomain"
             name="subdomain"
             placeholder="your-subdomain"
-            defaultValue={defaultValue}
+            value={value}
+            onChange={(e) => onChange(e.target.value.toLowerCase())}
             className="w-full rounded-r-none focus:z-10"
             required
           />
@@ -55,12 +53,10 @@ function SubdomainInput({ defaultValue }: { defaultValue?: string }) {
 
 function IconPicker({
   icon,
-  setIcon,
-  defaultValue
+  setIcon
 }: {
   icon: string;
   setIcon: (icon: string) => void;
-  defaultValue?: string;
 }) {
   const [isPickerOpen, setIsPickerOpen] = useState(false);
 
@@ -73,7 +69,7 @@ function IconPicker({
     <div className="space-y-2">
       <Label htmlFor="icon">Icon</Label>
       <div className="flex flex-col gap-2">
-        <input type="hidden" name="icon" value={icon} required />
+        <input type="hidden" name="icon" value={icon} />
         <div className="flex items-center gap-2">
           <Card className="flex-1 flex flex-row items-center justify-between p-2 border border-input rounded-md">
             <div className="min-w-[40px] min-h-[40px] flex items-center pl-[14px] select-none">
@@ -105,7 +101,6 @@ function IconPicker({
               >
                 <EmojiPicker
                   className="h-[300px] w-[256px]"
-                  defaultValue={defaultValue}
                   onEmojiSelect={handleEmojiSelect}
                 >
                   <EmojiPickerSearch />
@@ -126,19 +121,40 @@ function IconPicker({
 
 export function SubdomainForm() {
   const [icon, setIcon] = useState('');
+  const [subdomain, setSubdomain] = useState('');
+  const [errorDismissed, setErrorDismissed] = useState(false);
 
   const [state, action, isPending] = useActionState<CreateState, FormData>(
     createSubdomainAction,
     {}
   );
 
+  // Restore form values from server action response after failed submission
+  useEffect(() => {
+    if (state?.error) {
+      if (state.subdomain !== undefined) setSubdomain(state.subdomain);
+      if (state.icon) setIcon(state.icon);
+    }
+    setErrorDismissed(false);
+  }, [state]);
+
+  const handleSubdomainChange = (value: string) => {
+    setSubdomain(value);
+    setErrorDismissed(true);
+  };
+
+  const handleIconChange = (value: string) => {
+    setIcon(value);
+    setErrorDismissed(true);
+  };
+
   return (
     <form action={action} className="space-y-4">
-      <SubdomainInput defaultValue={state?.subdomain} />
+      <SubdomainInput value={subdomain} onChange={handleSubdomainChange} />
 
-      <IconPicker icon={icon} setIcon={setIcon} defaultValue={state?.icon} />
+      <IconPicker icon={icon} setIcon={handleIconChange} />
 
-      {state?.error && (
+      {state?.error && !errorDismissed && (
         <div className="text-sm text-red-500">{state.error}</div>
       )}
 

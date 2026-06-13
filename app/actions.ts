@@ -6,35 +6,45 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { rootDomain, protocol } from '@/lib/utils';
 
-export async function createSubdomainAction(
-  prevState: any,
-  formData: FormData
-) {
-  const subdomain = formData.get('subdomain') as string;
-  const icon = formData.get('icon') as string;
+export type CreateState = {
+  error?: string;
+  subdomain?: string;
+  icon?: string;
+};
 
-  if (!subdomain || !icon) {
-    return { success: false, error: 'Subdomain and icon are required' };
+export async function createSubdomainAction(
+  _prevState: CreateState,
+  formData: FormData
+): Promise<CreateState> {
+  const subdomain = (formData.get('subdomain') as string)?.trim() ?? '';
+  const icon = (formData.get('icon') as string)?.trim() ?? '';
+
+  if (!subdomain) {
+    return { error: 'Please enter a subdomain name', subdomain, icon };
+  }
+
+  if (!icon) {
+    return { error: 'Please select an emoji icon', subdomain, icon };
   }
 
   if (!isValidIcon(icon)) {
     return {
+      error: 'Please select a valid emoji (maximum 10 characters)',
       subdomain,
-      icon,
-      success: false,
-      error: 'Please enter a valid emoji (maximum 10 characters)'
+      icon
     };
   }
 
-  const sanitizedSubdomain = subdomain.toLowerCase().replace(/[^a-z0-9-]/g, '');
+  const sanitizedSubdomain = subdomain
+    .toLowerCase()
+    .replace(/[^a-z0-9-]/g, '');
 
   if (sanitizedSubdomain !== subdomain) {
     return {
-      subdomain,
-      icon,
-      success: false,
       error:
-        'Subdomain can only have lowercase letters, numbers, and hyphens. Please try again.'
+        'Subdomain can only contain lowercase letters, numbers, and hyphens',
+      subdomain,
+      icon
     };
   }
 
@@ -43,10 +53,9 @@ export async function createSubdomainAction(
   );
   if (subdomainAlreadyExists) {
     return {
+      error: `The subdomain "${sanitizedSubdomain}" is already taken`,
       subdomain,
-      icon,
-      success: false,
-      error: 'This subdomain is already taken'
+      icon
     };
   }
 
