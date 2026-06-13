@@ -3,9 +3,9 @@
 import { useActionState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Trash2, Loader2 } from 'lucide-react';
+import { Trash2, Loader2, LogOut } from 'lucide-react';
 import Link from 'next/link';
-import { deleteSubdomainAction } from '@/app/actions';
+import { deleteSubdomainAction, logoutAction } from '@/app/actions';
 import { rootDomain, protocol } from '@/lib/utils';
 
 type Tenant = {
@@ -20,8 +20,6 @@ type DeleteState = {
 };
 
 function DashboardHeader() {
-  // TODO: You can add authentication here with your preferred auth provider
-
   return (
     <div className="flex justify-between items-center mb-8">
       <h1 className="text-3xl font-bold">Subdomain Management</h1>
@@ -32,6 +30,12 @@ function DashboardHeader() {
         >
           {rootDomain}
         </Link>
+        <form action={logoutAction}>
+          <Button type="submit" variant="outline" size="sm" className="gap-1.5">
+            <LogOut className="h-4 w-4" />
+            Log out
+          </Button>
+        </form>
       </div>
     </div>
   );

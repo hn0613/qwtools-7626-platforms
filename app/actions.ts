@@ -5,11 +5,23 @@ import { isValidIcon } from '@/lib/subdomains';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { rootDomain, protocol } from '@/lib/utils';
+import { cookies } from 'next/headers';
+import { verifyToken, ADMIN_COOKIE } from '@/lib/auth';
+
+async function requireAuth(): Promise<boolean> {
+  const cookieStore = await cookies();
+  const token = cookieStore.get(ADMIN_COOKIE)?.value;
+  return token ? verifyToken(token) : false;
+}
 
 export async function createSubdomainAction(
   prevState: any,
   formData: FormData
 ) {
+  if (!(await requireAuth())) {
+    return { error: 'Please log in to continue.' };
+  }
+
   const subdomain = formData.get('subdomain') as string;
   const icon = formData.get('icon') as string;
 
@@ -62,8 +74,18 @@ export async function deleteSubdomainAction(
   prevState: any,
   formData: FormData
 ) {
+  if (!(await requireAuth())) {
+    return { error: 'Please log in to continue.' };
+  }
+
   const subdomain = formData.get('subdomain');
   await redis.del(`subdomain:${subdomain}`);
   revalidatePath('/admin');
   return { success: 'Domain deleted successfully' };
+}
+
+export async function logoutAction() {
+  const cookieStore = await cookies();
+  cookieStore.delete(ADMIN_COOKIE);
+  redirect('/login');
 }
