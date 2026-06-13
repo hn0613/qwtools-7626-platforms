@@ -12,17 +12,50 @@ export async function createSubdomainAction(
 ) {
   const subdomain = formData.get('subdomain') as string;
   const icon = formData.get('icon') as string;
+  const name = (formData.get('name') as string)?.trim();
+  const description = (formData.get('description') as string)?.trim();
 
-  if (!subdomain || !icon) {
-    return { success: false, error: 'Subdomain and icon are required' };
+  if (!subdomain || !icon || !name || !description) {
+    return {
+      subdomain,
+      icon,
+      name,
+      description,
+      success: false,
+      error: 'All fields are required'
+    };
   }
 
   if (!isValidIcon(icon)) {
     return {
       subdomain,
       icon,
+      name,
+      description,
       success: false,
       error: 'Please enter a valid emoji (maximum 10 characters)'
+    };
+  }
+
+  if (name.length > 50) {
+    return {
+      subdomain,
+      icon,
+      name,
+      description,
+      success: false,
+      error: 'Brand name must be under 50 characters'
+    };
+  }
+
+  if (description.length > 200) {
+    return {
+      subdomain,
+      icon,
+      name,
+      description,
+      success: false,
+      error: 'Description must be under 200 characters'
     };
   }
 
@@ -32,6 +65,8 @@ export async function createSubdomainAction(
     return {
       subdomain,
       icon,
+      name,
+      description,
       success: false,
       error:
         'Subdomain can only have lowercase letters, numbers, and hyphens. Please try again.'
@@ -45,6 +80,8 @@ export async function createSubdomainAction(
     return {
       subdomain,
       icon,
+      name,
+      description,
       success: false,
       error: 'This subdomain is already taken'
     };
@@ -52,6 +89,8 @@ export async function createSubdomainAction(
 
   await redis.set(`subdomain:${sanitizedSubdomain}`, {
     emoji: icon,
+    name,
+    description,
     createdAt: Date.now()
   });
 

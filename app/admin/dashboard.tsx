@@ -7,12 +7,7 @@ import { Trash2, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { deleteSubdomainAction } from '@/app/actions';
 import { rootDomain, protocol } from '@/lib/utils';
-
-type Tenant = {
-  subdomain: string;
-  emoji: string;
-  createdAt: number;
-};
+import type { Tenant } from '@/lib/types';
 
 type DeleteState = {
   error?: string;
@@ -62,7 +57,10 @@ function TenantGrid({
         <Card key={tenant.subdomain}>
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-xl">{tenant.subdomain}</CardTitle>
+              <div className="min-w-0">
+                <CardTitle className="text-xl">{tenant.name}</CardTitle>
+                <p className="text-sm text-gray-500 truncate">{tenant.subdomain}.{rootDomain}</p>
+              </div>
               <form action={action}>
                 <input
                   type="hidden"
@@ -74,7 +72,7 @@ function TenantGrid({
                   size="icon"
                   type="submit"
                   disabled={isPending}
-                  className="text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+                  className="text-gray-500 hover:text-gray-700 hover:bg-gray-50 shrink-0"
                 >
                   {isPending ? (
                     <Loader2 className="h-5 w-5 animate-spin" />
@@ -92,6 +90,7 @@ function TenantGrid({
                 Created: {new Date(tenant.createdAt).toLocaleDateString()}
               </div>
             </div>
+            <p className="mt-3 text-sm text-gray-600 line-clamp-2">{tenant.description}</p>
             <div className="mt-4">
               <a
                 href={`${protocol}://${tenant.subdomain}.${rootDomain}`}

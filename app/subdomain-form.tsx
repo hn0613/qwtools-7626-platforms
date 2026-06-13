@@ -28,6 +28,8 @@ type CreateState = {
   success?: boolean;
   subdomain?: string;
   icon?: string;
+  name?: string;
+  description?: string;
 };
 
 function SubdomainInput({ defaultValue }: { defaultValue?: string }) {
@@ -135,6 +137,32 @@ export function SubdomainForm() {
   return (
     <form action={action} className="space-y-4">
       <SubdomainInput defaultValue={state?.subdomain} />
+
+      <div className="space-y-2">
+        <Label htmlFor="name">Brand Name</Label>
+        <Input
+          id="name"
+          name="name"
+          placeholder="Your Brand Name"
+          defaultValue={state?.name}
+          maxLength={50}
+          required
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="description">Description</Label>
+        <textarea
+          id="description"
+          name="description"
+          placeholder="A short description of your brand"
+          defaultValue={state?.description}
+          maxLength={200}
+          required
+          rows={3}
+          className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+        />
+      </div>
 
       <IconPicker icon={icon} setIcon={setIcon} defaultValue={state?.icon} />
 

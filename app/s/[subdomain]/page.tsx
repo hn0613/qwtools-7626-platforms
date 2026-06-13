@@ -19,8 +19,8 @@ export async function generateMetadata({
   }
 
   return {
-    title: `${subdomain}.${rootDomain}`,
-    description: `Subdomain page for ${subdomain}.${rootDomain}`
+    title: `${subdomainData.name} — ${subdomain}.${rootDomain}`,
+    description: subdomainData.description
   };
 }
 
@@ -51,10 +51,13 @@ export default async function SubdomainPage({
         <div className="text-center">
           <div className="text-9xl mb-6">{subdomainData.emoji}</div>
           <h1 className="text-4xl font-bold tracking-tight text-gray-900">
-            Welcome to {subdomain}.{rootDomain}
+            Welcome to {subdomainData.name}
           </h1>
           <p className="mt-3 text-lg text-gray-600">
-            This is your custom subdomain page
+            {subdomainData.description}
+          </p>
+          <p className="mt-2 text-sm text-gray-400">
+            {subdomain}.{rootDomain}
           </p>
         </div>
       </div>

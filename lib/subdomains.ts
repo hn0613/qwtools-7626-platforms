@@ -1,4 +1,5 @@
 import { redis } from '@/lib/redis';
+import type { SubdomainData, Tenant } from '@/lib/types';
 
 export function isValidIcon(str: string) {
   if (str.length > 10) {
@@ -26,27 +27,28 @@ export function isValidIcon(str: string) {
   return str.length >= 1 && str.length <= 10;
 }
 
-type SubdomainData = {
-  emoji: string;
-  createdAt: number;
-};
-
-export async function getSubdomainData(subdomain: string) {
+export async function getSubdomainData(subdomain: string): Promise<SubdomainData | null> {
   const sanitizedSubdomain = subdomain.toLowerCase().replace(/[^a-z0-9-]/g, '');
-  const data = await redis.get<SubdomainData>(
+  const data = await redis.get<Partial<SubdomainData>>(
     `subdomain:${sanitizedSubdomain}`
   );
-  return data;
+  if (!data) return null;
+  return {
+    emoji: data.emoji || '❓',
+    name: data.name || sanitizedSubdomain,
+    description: data.description || `Welcome to ${sanitizedSubdomain}`,
+    createdAt: data.createdAt || Date.now(),
+  };
 }
 
-export async function getAllSubdomains() {
+export async function getAllSubdomains(): Promise<Tenant[]> {
   const keys = await redis.keys('subdomain:*');
 
   if (!keys.length) {
     return [];
   }
 
-  const values = await redis.mget<SubdomainData[]>(...keys);
+  const values = await redis.mget<Partial<SubdomainData>[]>(...keys);
 
   return keys.map((key, index) => {
     const subdomain = key.replace('subdomain:', '');
@@ -55,6 +57,8 @@ export async function getAllSubdomains() {
     return {
       subdomain,
       emoji: data?.emoji || '❓',
+      name: data?.name || subdomain,
+      description: data?.description || `Welcome to ${subdomain}`,
       createdAt: data?.createdAt || Date.now()
     };
   });
