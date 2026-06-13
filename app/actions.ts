@@ -1,7 +1,12 @@
 'use server';
 
-import { redis } from '@/lib/redis';
-import { isValidIcon } from '@/lib/subdomains';
+import {
+  isValidIcon,
+  sanitizeSubdomain,
+  tenantExists,
+  createTenant,
+  deleteTenant,
+} from '@/lib/subdomains';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { rootDomain, protocol } from '@/lib/utils';
@@ -26,9 +31,9 @@ export async function createSubdomainAction(
     };
   }
 
-  const sanitizedSubdomain = subdomain.toLowerCase().replace(/[^a-z0-9-]/g, '');
+  const sanitized = sanitizeSubdomain(subdomain);
 
-  if (sanitizedSubdomain !== subdomain) {
+  if (sanitized !== subdomain) {
     return {
       subdomain,
       icon,
@@ -38,10 +43,7 @@ export async function createSubdomainAction(
     };
   }
 
-  const subdomainAlreadyExists = await redis.get(
-    `subdomain:${sanitizedSubdomain}`
-  );
-  if (subdomainAlreadyExists) {
+  if (await tenantExists(sanitized)) {
     return {
       subdomain,
       icon,
@@ -50,20 +52,17 @@ export async function createSubdomainAction(
     };
   }
 
-  await redis.set(`subdomain:${sanitizedSubdomain}`, {
-    emoji: icon,
-    createdAt: Date.now()
-  });
+  await createTenant(sanitized, icon);
 
-  redirect(`${protocol}://${sanitizedSubdomain}.${rootDomain}`);
+  redirect(`${protocol}://${sanitized}.${rootDomain}`);
 }
 
 export async function deleteSubdomainAction(
   prevState: any,
   formData: FormData
 ) {
-  const subdomain = formData.get('subdomain');
-  await redis.del(`subdomain:${subdomain}`);
+  const subdomain = formData.get('subdomain') as string;
+  await deleteTenant(subdomain);
   revalidatePath('/admin');
   return { success: 'Domain deleted successfully' };
 }

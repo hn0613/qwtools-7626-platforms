@@ -7,12 +7,7 @@ import { Trash2, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { deleteSubdomainAction } from '@/app/actions';
 import { rootDomain, protocol } from '@/lib/utils';
-
-type Tenant = {
-  subdomain: string;
-  emoji: string;
-  createdAt: number;
-};
+import type { Tenant } from '@/lib/subdomains';
 
 type DeleteState = {
   error?: string;
@@ -89,7 +84,7 @@ function TenantGrid({
             <div className="flex items-center justify-between">
               <div className="text-4xl">{tenant.emoji}</div>
               <div className="text-sm text-gray-500">
-                Created: {new Date(tenant.createdAt).toLocaleDateString()}
+                Created: {tenant.createdAt ? new Date(tenant.createdAt).toLocaleDateString() : 'Unknown'}
               </div>
             </div>
             <div className="mt-4">
