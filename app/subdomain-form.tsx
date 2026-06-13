@@ -2,7 +2,7 @@
 
 import type React from 'react';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useActionState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,17 +20,16 @@ import {
   EmojiPickerSearch,
   EmojiPickerFooter
 } from '@/components/ui/emoji-picker';
-import { createSubdomainAction } from '@/app/actions';
+import { createSubdomainAction, type CreateState } from '@/app/actions';
 import { rootDomain } from '@/lib/utils';
 
-type CreateState = {
-  error?: string;
-  success?: boolean;
-  subdomain?: string;
-  icon?: string;
-};
-
-function SubdomainInput({ defaultValue }: { defaultValue?: string }) {
+function SubdomainInput({
+  value,
+  onChange
+}: {
+  value: string;
+  onChange: (value: string) => void;
+}) {
   return (
     <div className="space-y-2">
       <Label htmlFor="subdomain">Subdomain</Label>
@@ -40,7 +39,8 @@ function SubdomainInput({ defaultValue }: { defaultValue?: string }) {
             id="subdomain"
             name="subdomain"
             placeholder="your-subdomain"
-            defaultValue={defaultValue}
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
             className="w-full rounded-r-none focus:z-10"
             required
           />
@@ -55,12 +55,10 @@ function SubdomainInput({ defaultValue }: { defaultValue?: string }) {
 
 function IconPicker({
   icon,
-  setIcon,
-  defaultValue
+  setIcon
 }: {
   icon: string;
   setIcon: (icon: string) => void;
-  defaultValue?: string;
 }) {
   const [isPickerOpen, setIsPickerOpen] = useState(false);
 
@@ -105,7 +103,6 @@ function IconPicker({
               >
                 <EmojiPicker
                   className="h-[300px] w-[256px]"
-                  defaultValue={defaultValue}
                   onEmojiSelect={handleEmojiSelect}
                 >
                   <EmojiPickerSearch />
@@ -126,17 +123,30 @@ function IconPicker({
 
 export function SubdomainForm() {
   const [icon, setIcon] = useState('');
+  const [subdomain, setSubdomain] = useState('');
 
   const [state, action, isPending] = useActionState<CreateState, FormData>(
     createSubdomainAction,
     {}
   );
 
+  // Sync local state from server response after validation errors.
+  // The server echoes back submitted values so we can restore state
+  // in case of remounts or state mismatches.
+  useEffect(() => {
+    if (state?.subdomain !== undefined) {
+      setSubdomain(state.subdomain);
+    }
+    if (state?.icon !== undefined) {
+      setIcon(state.icon);
+    }
+  }, [state?.subdomain, state?.icon]);
+
   return (
     <form action={action} className="space-y-4">
-      <SubdomainInput defaultValue={state?.subdomain} />
+      <SubdomainInput value={subdomain} onChange={setSubdomain} />
 
-      <IconPicker icon={icon} setIcon={setIcon} defaultValue={state?.icon} />
+      <IconPicker icon={icon} setIcon={setIcon} />
 
       {state?.error && (
         <div className="text-sm text-red-500">{state.error}</div>

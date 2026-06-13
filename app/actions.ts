@@ -6,15 +6,27 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { rootDomain, protocol } from '@/lib/utils';
 
+export type CreateState = {
+  error?: string;
+  success?: boolean;
+  subdomain?: string;
+  icon?: string;
+};
+
 export async function createSubdomainAction(
-  prevState: any,
+  prevState: CreateState,
   formData: FormData
-) {
+): Promise<CreateState> {
   const subdomain = formData.get('subdomain') as string;
   const icon = formData.get('icon') as string;
 
   if (!subdomain || !icon) {
-    return { success: false, error: 'Subdomain and icon are required' };
+    return {
+      subdomain: subdomain || '',
+      icon: icon || '',
+      success: false,
+      error: 'Subdomain and icon are required'
+    };
   }
 
   if (!isValidIcon(icon)) {
@@ -59,7 +71,7 @@ export async function createSubdomainAction(
 }
 
 export async function deleteSubdomainAction(
-  prevState: any,
+  _prevState: Record<string, unknown>,
   formData: FormData
 ) {
   const subdomain = formData.get('subdomain');
