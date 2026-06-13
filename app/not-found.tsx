@@ -3,26 +3,28 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
-import { rootDomain, protocol } from '@/lib/utils';
+import { rootDomain } from '@/lib/utils';
+import { extractSubdomainFromHost, buildRootUrl } from '@/lib/domain';
 
 export default function NotFound() {
   const [subdomain, setSubdomain] = useState<string | null>(null);
   const pathname = usePathname();
 
   useEffect(() => {
-    // Extract subdomain from URL if we're on a subdomain page
-    if (pathname?.startsWith('/subdomain/')) {
+    // Extract subdomain from the internal rewrite path
+    if (pathname?.startsWith('/s/')) {
       const extractedSubdomain = pathname.split('/')[2];
       if (extractedSubdomain) {
         setSubdomain(extractedSubdomain);
+        return;
       }
-    } else {
-      // Try to extract from hostname for direct subdomain access
-      const hostname = window.location.hostname;
-      if (hostname.includes(`.${rootDomain.split(':')[0]}`)) {
-        const extractedSubdomain = hostname.split('.')[0];
-        setSubdomain(extractedSubdomain);
-      }
+    }
+
+    // Try to extract from hostname for direct subdomain access
+    const host = window.location.host;
+    const extracted = extractSubdomainFromHost(host);
+    if (extracted) {
+      setSubdomain(extracted);
     }
   }, [pathname]);
 
@@ -44,7 +46,7 @@ export default function NotFound() {
         </p>
         <div className="mt-6">
           <Link
-            href={`${protocol}://${rootDomain}`}
+            href={buildRootUrl()}
             className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
           >
             {subdomain ? `Create ${subdomain}` : `Go to ${rootDomain}`}

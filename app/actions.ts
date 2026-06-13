@@ -4,7 +4,7 @@ import { redis } from '@/lib/redis';
 import { isValidIcon } from '@/lib/subdomains';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { rootDomain, protocol } from '@/lib/utils';
+import { buildTenantUrl } from '@/lib/domain';
 
 export async function createSubdomainAction(
   prevState: any,
@@ -55,7 +55,7 @@ export async function createSubdomainAction(
     createdAt: Date.now()
   });
 
-  redirect(`${protocol}://${sanitizedSubdomain}.${rootDomain}`);
+  redirect(buildTenantUrl(sanitizedSubdomain));
 }
 
 export async function deleteSubdomainAction(
