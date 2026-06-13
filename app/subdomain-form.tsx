@@ -22,12 +22,17 @@ import {
 } from '@/components/ui/emoji-picker';
 import { createSubdomainAction } from '@/app/actions';
 import { rootDomain } from '@/lib/utils';
+import { TENANT_FIELD_LIMITS } from '@/lib/subdomains';
 
 type CreateState = {
   error?: string;
   success?: boolean;
   subdomain?: string;
   icon?: string;
+  name?: string;
+  tagline?: string;
+  description?: string;
+  headline?: string;
 };
 
 function SubdomainInput({ defaultValue }: { defaultValue?: string }) {
@@ -124,6 +129,49 @@ function IconPicker({
   );
 }
 
+function BrandField({
+  id,
+  name,
+  label,
+  placeholder,
+  defaultValue,
+  maxLength,
+  required,
+  multiline = false
+}: {
+  id: string;
+  name: string;
+  label: string;
+  placeholder: string;
+  defaultValue?: string;
+  maxLength: number;
+  required?: boolean;
+  multiline?: boolean;
+}) {
+  const Component = multiline ? 'textarea' : Input;
+
+  return (
+    <div className="space-y-2">
+      <Label htmlFor={id}>
+        {label}
+        {required ? '' : ' (optional)'}
+      </Label>
+      <Component
+        id={id}
+        name={name}
+        placeholder={placeholder}
+        defaultValue={defaultValue}
+        maxLength={maxLength}
+        required={required}
+        className={multiline ? 'w-full min-h-[80px] resize-y p-2 border border-input rounded-md text-sm' : ''}
+      />
+      <p className="text-xs text-gray-500">
+        Max {maxLength} characters
+      </p>
+    </div>
+  );
+}
+
 export function SubdomainForm() {
   const [icon, setIcon] = useState('');
 
@@ -137,6 +185,44 @@ export function SubdomainForm() {
       <SubdomainInput defaultValue={state?.subdomain} />
 
       <IconPicker icon={icon} setIcon={setIcon} defaultValue={state?.icon} />
+
+      <BrandField
+        id="name"
+        name="name"
+        label="Display Name"
+        placeholder="Acme Corp"
+        defaultValue={state?.name}
+        maxLength={TENANT_FIELD_LIMITS.name.maxLength}
+        required
+      />
+
+      <BrandField
+        id="tagline"
+        name="tagline"
+        label="Tagline"
+        placeholder="Build the future, one widget at a time"
+        defaultValue={state?.tagline}
+        maxLength={TENANT_FIELD_LIMITS.tagline.maxLength}
+      />
+
+      <BrandField
+        id="headline"
+        name="headline"
+        label="Welcome Headline"
+        placeholder="Welcome to Acme Corp"
+        defaultValue={state?.headline}
+        maxLength={TENANT_FIELD_LIMITS.headline.maxLength}
+      />
+
+      <BrandField
+        id="description"
+        name="description"
+        label="Description"
+        placeholder="A short paragraph about what this tenant does..."
+        defaultValue={state?.description}
+        maxLength={TENANT_FIELD_LIMITS.description.maxLength}
+        multiline
+      />
 
       {state?.error && (
         <div className="text-sm text-red-500">{state.error}</div>

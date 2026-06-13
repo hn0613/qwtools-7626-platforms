@@ -7,11 +7,16 @@ import { Trash2, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { deleteSubdomainAction } from '@/app/actions';
 import { rootDomain, protocol } from '@/lib/utils';
+import { resolveTenantDisplay } from '@/lib/subdomains';
 
 type Tenant = {
   subdomain: string;
   emoji: string;
   createdAt: number;
+  name?: string;
+  tagline?: string;
+  description?: string;
+  headline?: string;
 };
 
 type DeleteState = {
@@ -58,53 +63,65 @@ function TenantGrid({
 
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-      {tenants.map((tenant) => (
-        <Card key={tenant.subdomain}>
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-xl">{tenant.subdomain}</CardTitle>
-              <form action={action}>
-                <input
-                  type="hidden"
-                  name="subdomain"
-                  value={tenant.subdomain}
-                />
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  type="submit"
-                  disabled={isPending}
-                  className="text-gray-500 hover:text-gray-700 hover:bg-gray-50"
-                >
-                  {isPending ? (
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                  ) : (
-                    <Trash2 className="h-5 w-5" />
-                  )}
-                </Button>
-              </form>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <div className="text-4xl">{tenant.emoji}</div>
-              <div className="text-sm text-gray-500">
-                Created: {new Date(tenant.createdAt).toLocaleDateString()}
+      {tenants.map((tenant) => {
+        const display = resolveTenantDisplay(tenant, tenant.subdomain);
+        return (
+          <Card key={tenant.subdomain}>
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-xl">{display.name}</CardTitle>
+                <form action={action}>
+                  <input
+                    type="hidden"
+                    name="subdomain"
+                    value={tenant.subdomain}
+                  />
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    type="submit"
+                    disabled={isPending}
+                    className="text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+                  >
+                    {isPending ? (
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                    ) : (
+                      <Trash2 className="h-5 w-5" />
+                    )}
+                  </Button>
+                </form>
               </div>
-            </div>
-            <div className="mt-4">
-              <a
-                href={`${protocol}://${tenant.subdomain}.${rootDomain}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-500 hover:underline text-sm"
-              >
-                Visit subdomain →
-              </a>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
+              <p className="text-xs text-gray-400">{tenant.subdomain}.{rootDomain}</p>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-start gap-3">
+                <div className="text-4xl">{tenant.emoji}</div>
+                <div className="flex-1 min-w-0">
+                  {display.tagline && (
+                    <p className="text-sm text-gray-700 truncate">{display.tagline}</p>
+                  )}
+                  <p className="text-xs text-gray-500 mt-1 line-clamp-2">
+                    {display.description}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center justify-between mt-4">
+                <div className="text-xs text-gray-400">
+                  Created: {new Date(tenant.createdAt).toLocaleDateString()}
+                </div>
+                <a
+                  href={`${protocol}://${tenant.subdomain}.${rootDomain}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-500 hover:underline text-sm"
+                >
+                  Visit →
+                </a>
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })}
     </div>
   );
 }

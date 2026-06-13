@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { getSubdomainData } from '@/lib/subdomains';
+import { getSubdomainData, resolveTenantDisplay } from '@/lib/subdomains';
 import { protocol, rootDomain } from '@/lib/utils';
 
 export async function generateMetadata({
@@ -18,9 +18,11 @@ export async function generateMetadata({
     };
   }
 
+  const display = resolveTenantDisplay(subdomainData, subdomain);
+
   return {
-    title: `${subdomain}.${rootDomain}`,
-    description: `Subdomain page for ${subdomain}.${rootDomain}`
+    title: `${display.name} | ${subdomain}.${rootDomain}`,
+    description: display.tagline || display.description
   };
 }
 
@@ -36,6 +38,8 @@ export default async function SubdomainPage({
     notFound();
   }
 
+  const display = resolveTenantDisplay(subdomainData, subdomain);
+
   return (
     <div className="flex min-h-screen flex-col bg-gradient-to-b from-blue-50 to-white p-4">
       <div className="absolute top-4 right-4">
@@ -48,14 +52,22 @@ export default async function SubdomainPage({
       </div>
 
       <div className="flex-1 flex items-center justify-center">
-        <div className="text-center">
+        <div className="text-center max-w-2xl">
           <div className="text-9xl mb-6">{subdomainData.emoji}</div>
           <h1 className="text-4xl font-bold tracking-tight text-gray-900">
-            Welcome to {subdomain}.{rootDomain}
+            {display.headline}
           </h1>
-          <p className="mt-3 text-lg text-gray-600">
-            This is your custom subdomain page
+          {display.tagline && (
+            <p className="mt-3 text-xl text-gray-500 font-medium">
+              {display.tagline}
+            </p>
+          )}
+          <p className="mt-4 text-lg text-gray-600 leading-relaxed">
+            {display.description}
           </p>
+          <div className="mt-6 text-sm text-gray-400">
+            {subdomain}.{rootDomain}
+          </div>
         </div>
       </div>
     </div>
