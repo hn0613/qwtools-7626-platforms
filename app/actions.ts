@@ -1,7 +1,11 @@
 'use server';
 
 import { redis } from '@/lib/redis';
-import { isValidIcon } from '@/lib/subdomains';
+import {
+  sanitizeSubdomain,
+  validateSubdomain,
+  isValidIcon
+} from '@/lib/tenant';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { rootDomain, protocol } from '@/lib/utils';
@@ -13,10 +17,12 @@ export async function createSubdomainAction(
   const subdomain = formData.get('subdomain') as string;
   const icon = formData.get('icon') as string;
 
+  // 1. 基本非空检查
   if (!subdomain || !icon) {
     return { success: false, error: 'Subdomain and icon are required' };
   }
 
+  // 2. emoji 校验（共用 isValidIcon）
   if (!isValidIcon(icon)) {
     return {
       subdomain,
@@ -26,7 +32,8 @@ export async function createSubdomainAction(
     };
   }
 
-  const sanitizedSubdomain = subdomain.toLowerCase().replace(/[^a-z0-9-]/g, '');
+  // 3. 清洗 + 比对（保持现有行为：拒绝不干净的输入）
+  const sanitizedSubdomain = sanitizeSubdomain(subdomain);
 
   if (sanitizedSubdomain !== subdomain) {
     return {
@@ -38,6 +45,18 @@ export async function createSubdomainAction(
     };
   }
 
+  // 4. 长度 + 保留名等规则（新增安全边界）
+  const validationError = validateSubdomain(sanitizedSubdomain);
+  if (validationError) {
+    return {
+      subdomain,
+      icon,
+      success: false,
+      error: validationError
+    };
+  }
+
+  // 5. 唯一性检查
   const subdomainAlreadyExists = await redis.get(
     `subdomain:${sanitizedSubdomain}`
   );
@@ -50,6 +69,7 @@ export async function createSubdomainAction(
     };
   }
 
+  // 6. 写入（数据结构不变，兼容旧记录）
   await redis.set(`subdomain:${sanitizedSubdomain}`, {
     emoji: icon,
     createdAt: Date.now()
@@ -62,8 +82,15 @@ export async function deleteSubdomainAction(
   prevState: any,
   formData: FormData
 ) {
-  const subdomain = formData.get('subdomain');
-  await redis.del(`subdomain:${subdomain}`);
+  const subdomain = formData.get('subdomain') as string;
+
+  // 清洗输入，防止未经处理的值直接传给 redis.del
+  const sanitized = sanitizeSubdomain(subdomain || '');
+  if (!sanitized) {
+    return { error: 'Invalid subdomain' };
+  }
+
+  await redis.del(`subdomain:${sanitized}`);
   revalidatePath('/admin');
   return { success: 'Domain deleted successfully' };
 }

@@ -28,7 +28,7 @@ function extractSubdomain(request: NextRequest): string | null {
   // Handle preview deployment URLs (tenant---branch-name.vercel.app)
   if (hostname.includes('---') && hostname.endsWith('.vercel.app')) {
     const parts = hostname.split('---');
-    return parts.length > 0 ? parts[0] : null;
+    return parts[0] || null;
   }
 
   // Regular subdomain detection
