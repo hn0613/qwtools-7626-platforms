@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { rootDomain } from '@/lib/utils';
+import { verifySessionToken, SESSION_COOKIE } from '@/lib/auth';
 
 function extractSubdomain(request: NextRequest): string | null {
   const url = request.url;
@@ -56,7 +57,14 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // On the root domain, allow normal access
+  // On the root domain, protect /admin routes (except the login page itself)
+  if (pathname.startsWith('/admin') && pathname !== '/admin/login') {
+    const token = request.cookies.get(SESSION_COOKIE)?.value;
+    if (!token || !(await verifySessionToken(token))) {
+      return NextResponse.redirect(new URL('/admin/login', request.url));
+    }
+  }
+
   return NextResponse.next();
 }
 

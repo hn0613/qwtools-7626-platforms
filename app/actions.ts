@@ -4,7 +4,17 @@ import { redis } from '@/lib/redis';
 import { isValidIcon } from '@/lib/subdomains';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
+import { cookies } from 'next/headers';
 import { rootDomain, protocol } from '@/lib/utils';
+import { verifySessionToken, SESSION_COOKIE } from '@/lib/auth';
+
+async function requireAuth() {
+  const cookieStore = await cookies();
+  const token = cookieStore.get(SESSION_COOKIE)?.value;
+  if (!token || !(await verifySessionToken(token))) {
+    throw new Error('Unauthorized');
+  }
+}
 
 export async function createSubdomainAction(
   prevState: any,
@@ -62,6 +72,8 @@ export async function deleteSubdomainAction(
   prevState: any,
   formData: FormData
 ) {
+  await requireAuth();
+
   const subdomain = formData.get('subdomain');
   await redis.del(`subdomain:${subdomain}`);
   revalidatePath('/admin');
